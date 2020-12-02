@@ -1,38 +1,123 @@
 import { fcfs_Draw, fcfc_CalcTime } from "../algorithms/fcfs.js";
 import { sjf_Draw, sjf_CalcTime } from "../algorithms/sjf.js";
 import { priority_Draw, priority_CalcTime } from "../algorithms/priority.js";
-import { robin_Draw, robin_CalcTime } from "../algorithms/roundrobin.js";
+import { robin_Draw } from "../algorithms/roundrobin.js";
+
+// Display the correct table columns depending on chosen algorithm 
+export const showDisplay = (e) => {
+  if (e.target.value == "priority") {
+    document
+      .querySelectorAll(".priority-only")
+      .forEach((element) => (element.style.display = ""));
+    document
+      .querySelectorAll(".servtime")
+      .forEach((element) => (element.style.display = ""));
+  } else {
+    document
+      .querySelectorAll(".priority-only")
+      .forEach((element) => (element.style.display = "none"));
+    document
+      .querySelectorAll(".servtime")
+      .forEach((element) => (element.style.display = ""));
+  }
+
+  if (e.target.value == "robin") {
+    document
+      .querySelectorAll(".servtime")
+      .forEach((element) => (element.style.display = "none"));
+    document.querySelector("#quantumParagraph").style.display = "";
+  } else {
+    document
+      .querySelectorAll(".servtime")
+      .forEach((element) => (element.style.display = ""));
+    document.querySelector("#quantumParagraph").style.display = "none";
+  }
+
+  recalculateServiceTime();
+};
+
+// Adds an additional row in the input table
+export const addRow = () => {
+  var rows = document.querySelectorAll("#inputTable tr");
+  var lastRow = rows[rows.length - 1];
+  var lastRowNumebr = parseInt(lastRow.children[1].textContent);
+  var newRow = document.createElement("tr");
+  newRow.innerHTML =
+    "<td>P" +
+    (lastRowNumebr + 1) +
+    "</td><td>" +
+    (lastRowNumebr + 1) +
+    '</td><td><input class="exectime bg-dark text-white" type="text"/></td><td class="servtime"></td>' +
+    '<td class="priority-only"><input class="bg-dark text-white" type="text"/></td>';
+
+  lastRow.insertAdjacentElement("afterend", newRow);
+
+  var minus = document.querySelector("#minus");
+  minus.style.display = "";
+
+  var algorithm = document.querySelector(
+    "input[name=algorithm]:checked",
+    "#algorithm"
+  ).value;
+  if (algorithm != "priority") {
+    document.querySelectorAll(".priority-only").forEach((value) => {
+      value.style.display = "none";
+    });
+  }
+
+  var inputs = document.querySelectorAll("#inputTable tr");
+
+  $("#inputTable tr:last input").change(function () {
+    recalculateServiceTime();
+  });
+};
+
+// Removes the last row in the input table
+export const deleteRow = () => {
+  var rows = document.querySelectorAll("#inputTable tr");
+  var numberRows = rows.length;
+
+  var lastRow = rows[rows.length - 1];
+  lastRow.parentNode.removeChild(lastRow);
+
+  var minus = document.querySelector("#minus");
+  if (numberRows === 3) {
+    minus.style.display = "none";
+  }
+};
 
 // Calculates the Service Time based on the selected Algorithm
 export const recalculateServiceTime = () => {
-  var inputTable = $("#inputTable tr");
-  var totalExectuteTime = 0;
+  var inputTable = document.querySelectorAll("#inputTable tr");
+  var sumExecutionTime = 0;
 
-  var algorithm = $("input[name=algorithm]:checked", "#algorithm").val();
+  var algorithm = document.querySelector(
+    "input[name=algorithm]:checked",
+    "#algorithm"
+  ).value;
   if (algorithm == "fcfs") {
-    fcfc_CalcTime(inputTable, totalExectuteTime);
+    fcfc_CalcTime(inputTable, sumExecutionTime);
   } else if (algorithm == "sjf") {
-    sjf_CalcTime(inputTable, totalExectuteTime);
+    sjf_CalcTime(inputTable, sumExecutionTime);
   } else if (algorithm == "priority") {
-    priority_CalcTime(inputTable, totalExectuteTime);
-  } else if (algorithm == "robin") {
-    robin_CalcTime(inputTable,totalExectuteTime)
+    priority_CalcTime(inputTable, sumExecutionTime);
   }
 };
 
 // Determines which process is next in priority
-export const findNextIndexWithPriority = (currentIndex, priorities) => {
-  var currentPriority = 1000000;
-  if (currentIndex != -1) currentPriority = priorities[currentIndex];
+export const getNextPriority = (currentIndex, priorities) => {
+  var currentPriority = Number.MAX_SAFE_INTEGER;
+  if (currentIndex != -1) {
+    currentPriority = priorities[currentIndex];
+  }
   var resultPriority = 0;
   var resultIndex = -1;
   var samePriority = false;
   var areWeThereYet = false;
-
-  $.each(priorities, function (key, value) {
+  priorities.forEach((value, index) => {
     var changeInThisIteration = false;
 
-    if (key == currentIndex) {
+    if (index == currentIndex) {
       areWeThereYet = true;
       return true;
     }
@@ -42,7 +127,7 @@ export const findNextIndexWithPriority = (currentIndex, priorities) => {
           samePriority = true;
           changeInThisIteration = true;
           resultPriority = value;
-          resultIndex = key;
+          resultIndex = index;
         }
       } else if (value == currentPriority) {
         if (areWeThereYet) {
@@ -50,33 +135,34 @@ export const findNextIndexWithPriority = (currentIndex, priorities) => {
           areWeThereYet = false;
           changeInThisIteration = true;
           resultPriority = value;
-          resultIndex = key;
+          resultIndex = index;
         }
       } else {
         resultPriority = value;
-        resultIndex = key;
+        resultIndex = index;
       }
 
       if (value > resultPriority && !changeInThisIteration)
         samePriority = false;
     }
   });
+
   return resultIndex;
 };
 
 // Determines the next process
-export const findNextIndex = (currentIndex, array) => {
+export const getNextIndex = (currentIndex, array) => {
   var currentTime = 0;
   if (currentIndex != -1) currentTime = array[currentIndex];
-  var resultTime = 1000000;
+  var resultTime = Number.MAX_SAFE_INTEGER;
   var resultIndex = -1;
   var sameTime = false;
   var areWeThereYet = false;
 
-  $.each(array, function (key, value) {
+  array.forEach((value, index) => {
     var changeInThisIteration = false;
 
-    if (key == currentIndex) {
+    if (index == currentIndex) {
       areWeThereYet = true;
       return true;
     }
@@ -86,7 +172,7 @@ export const findNextIndex = (currentIndex, array) => {
           sameTime = true;
           changeInThisIteration = true;
           resultTime = value;
-          resultIndex = key;
+          resultIndex = index;
         }
       } else if (value == currentTime) {
         if (areWeThereYet) {
@@ -94,27 +180,31 @@ export const findNextIndex = (currentIndex, array) => {
           areWeThereYet = false;
           changeInThisIteration = true;
           resultTime = value;
-          resultIndex = key;
+          resultIndex = index;
         }
       } else {
         resultTime = value;
-        resultIndex = key;
+        resultIndex = index;
       }
 
       if (value < resultTime && !changeInThisIteration) sameTime = false;
     }
   });
-  return resultIndex;
-}
 
-// Draws the canvas of the result table with the revealing curtain
+  return resultIndex;
+};
+
+// Draws the canvas of the result table with the revealing cover
 export const draw = () => {
-  $("fresh").html("");
-  var inputTable = $("#inputTable tr");
+  document.querySelector("#timeline").innerHTML = "";
+  var inputTable = document.querySelectorAll("#inputTable tr");
   var th = "";
   var td = "";
 
-  var algorithm = $("input[name=algorithm]:checked", "#algorithm").val();
+  var algorithm = document.querySelector(
+    "input[name=algorithm]:checked",
+    "#algorithm"
+  ).value;
   if (algorithm == "fcfs") {
     fcfs_Draw(inputTable, th, td);
   } else if (algorithm == "sjf") {
@@ -124,80 +214,61 @@ export const draw = () => {
   } else if (algorithm == "robin") {
     robin_Draw(inputTable, th, td);
   }
-  animate();
+  removeCover();
 };
 
-// Carries out the animation of the curtain by revealing it over the total service time
+// Carries out the animation of the cover by revealing it over the total service time
 
-export const animate = () => {
-  $("fresh").prepend(
-    '<div id="curtain" style="position: absolute; right: 50%; width:100%; height:100px;"></div>'
+export const removeCover = () => {
+  // Initialize Cover for Animation
+  var timeline = document.querySelector("#timeline");
+  var cover = document.createElement("div");
+  cover.id = "cover";
+  cover.style.position = "absolute";
+  cover.style.right = "50%";
+  cover.style.height = "100px";
+
+  // Prepends The "Cover" to the Ghantt Table in order to cover it
+
+  timeline.insertBefore(cover, timeline.firstChild);
+
+  var ghanttTable = document.querySelector("#resultTable");
+  var ghanttWidth = parseFloat(
+    getComputedStyle(ghanttTable, null).width.replace("px", "")
   );
 
-  $("#curtain").width($("#resultTable").width());
-  $("#curtain").css({ left: $("#resultTable").position().left });
+  cover.style.width = ghanttWidth + "px";
+  cover.style.left = ghanttTable.style.left;
 
   var sum = 0;
-  $(".exectime").each(function () {
-    sum += Number($(this).val());
+
+  var execTimes = document.querySelectorAll(".exectime");
+  execTimes.forEach((value, index) => {
+    sum += parseInt(value.value);
   });
 
-  console.log($("#resultTable").width());
-  var distance = $("#curtain").css("width");
+  var distance = cover.style.height;
 
-  animationStep(sum, 0);
-  jQuery("#curtain").animate(
-    { width: "0", marginLeft: distance },
-    (sum * 1000) / 2,
-    "linear"
+  incrementTimer(sum, 0);
+
+  cover.animate(
+    { width: [cover.style.width, "0"], marginLeft: distance },
+    { duration: (sum * 1000) / 2, easing: "linear" }
   );
+  cover.style.width = "0px"
 };
 
-export const animationStep = (steps, cur) => {
-  $("#timer").html(" " + cur + " sec");
-  if (cur < steps) {
+// Recursive Function to increment Process Timer By the Total Execution Time
+export const incrementTimer = (total, current) => {
+  var timer = document.querySelector("#timer");
+  timer.innerHTML = current + "s";
+
+  if (current < total) {
     setTimeout(function () {
-      animationStep(steps, cur + 1);
+      incrementTimer(total, current + 1);
     }, 500);
   } else {
   }
 };
 
-// Adds an additional row in the input table
-export const addRow = () => {
-  var lastRow = $("#inputTable tr:last");
-  var lastRowNumebr = parseInt(lastRow.children()[1].innerText);
 
-  var newRow =
-    "<tr><td>P" +
-    (lastRowNumebr + 1) +
-    "</td><td>" +
-    (lastRowNumebr + 1) +
-    '</td><td><input class="exectime bg-dark text-white" type="text"/></td><td class="servtime"></td>' +
-    '<td class="priority-only"><input class="bg-dark text-white" type="text"/></td></tr>';
-
-  lastRow.after(newRow);
-
-  var minus = $("#minus");
-  minus.show();
-
-  if ($("input[name=algorithm]:checked", "#algorithm").val() != "priority")
-    $(".priority-only").hide();
-
-  $("#inputTable tr:last input").change(function () {
-    recalculateServiceTime();
-  });
-};
-
-// Removes the last row in the input table
-export const deleteRow = () => {
-  var numberRows = $("#inputTable tr").length;
-
-  var lastRow = $("#inputTable tr:last");
-  lastRow.remove();
-
-  var minus = $("#minus");
-  if (numberRows === 3) {
-    minus.hide();
-  }
-};

@@ -1,45 +1,51 @@
-const robin_CalcTime = (inputTable, totalExectuteTime) => {
-    
-}
-const robin_Draw = (inputTable,th,td) => {
-  var quantum = $("#quantum").val();
-  var executeTimes = [];
+/*
+  This method aims to generate the Ghantts Table for the Round Robin Process Scheduling 
+*/
+const robin_Draw = (inputTable, th, td) => {
+  // Get Time Quantum Value from Input
+  var quantumTime = document.querySelector("#quantum").value;
 
-  $.each(inputTable, function (key, value) {
-    if (key == 0) return true;
-    var executeTime = parseInt($(value.children[2]).children().first().val());
-    executeTimes[key - 1] = { executeTime: executeTime, P: key - 1 };
-  });
+  //Initialize List of Execution Times
+  var list_of_execution_times = [];
 
-  var areWeThereYet = false;
-  while (!areWeThereYet) {
-    areWeThereYet = true;
-    $.each(executeTimes, function (key, value) {
+  // Extract Execution Times from Proccesses in Queue
+  for (var i = 1; i < inputTable.length; i++) {
+    var row = inputTable[i];
+    var executeTime = parseInt(row.children[2].children[0].value);
+    list_of_execution_times[i - 1] = { executeTime: executeTime, P: i - 1 };
+  }
+
+  var finished = false;
+  var sumExecution = 0;
+
+  // Generates Ghantt Chart for Round Robin by reducing the execution time of each process by the time quantum and processes them over
+  while (!finished) {
+    finished = true;
+
+    list_of_execution_times.forEach((value, index) => {
       if (value.executeTime > 0) {
         th +=
           '<th style="height: 60px; width: ' +
-          (value.executeTime > quantum ? quantum : value.executeTime) * 20 +
+          (value.executeTime > quantumTime ? quantumTime : value.executeTime) *
+            50 +
           'px;">P' +
           value.P +
           "</th>";
-        td +=
-          "<td>" +
-          (value.executeTime > quantum ? quantum : value.executeTime) +
-          "</td>";
-        value.executeTime -= quantum;
-        areWeThereYet = false;
+        td += "<td>" + sumExecution + " sec</td>";
+        sumExecution += parseInt(value.executeTime > quantumTime ? quantumTime : value.executeTime)
+        value.executeTime -= quantumTime;
+        finished = false;
       }
     });
   }
-  $("fresh").html(
+  td += "<td>" + sumExecution + " sec</td>";
+
+  document.querySelector("#timeline").innerHTML =
     '<table id="resultTable" style="width: 70%"><tr>' +
-      th +
-      "</tr><tr>" +
-      td +
-      "</tr></table>"
-  );
+    th +
+    "</tr><tr>" +
+    td +
+    "</tr></table>";
 };
 
-
-
-export{robin_Draw, robin_CalcTime}
+export { robin_Draw };
